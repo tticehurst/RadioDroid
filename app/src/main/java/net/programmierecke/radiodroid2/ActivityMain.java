@@ -12,6 +12,7 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Build;
 import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.Log;
@@ -32,6 +33,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.MenuItemCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
@@ -95,6 +99,7 @@ public class ActivityMain extends AppCompatActivity implements SearchView.OnQuer
     public final static int MAX_DYNAMIC_LAUNCHER_SHORTCUTS = 4;
 
     public static final int FRAGMENT_FROM_BACKSTACK = 777;
+    private static final int LOCAL_NETWORK_PERMISSION_REQUEST = 1002;
 
     public static final String ACTION_SHOW_LOADING = "net.programmierecke.radiodroid2.show_loading";
     public static final String ACTION_HIDE_LOADING = "net.programmierecke.radiodroid2.hide_loading";
@@ -160,6 +165,25 @@ public class ActivityMain extends AppCompatActivity implements SearchView.OnQuer
         }
         setTheme(Utils.getThemeResId(this));
         setContentView(R.layout.layout_main);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+            final View bottomNavigation = findViewById(R.id.bottom_navigation);
+            final int bottomPadding = bottomNavigation.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(bottomNavigation, (view, insets) -> {
+                int navigationBarInset = insets.getInsets(
+                        WindowInsetsCompat.Type.navigationBars()).bottom;
+                view.setPadding(view.getPaddingLeft(), view.getPaddingTop(),
+                        view.getPaddingRight(), bottomPadding + navigationBarInset);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(bottomNavigation);
+        }
+        if (Build.VERSION.SDK_INT >= 37
+                && checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},
+                    LOCAL_NETWORK_PERMISSION_REQUEST);
+        }
 
         Log.d(TAG, "FilesDir: "+getFilesDir().getAbsolutePath());
         Log.d(TAG, "CacheDir: "+getCacheDir().getAbsolutePath());
